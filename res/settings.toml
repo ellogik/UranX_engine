@@ -1,0 +1,13 @@
+[manifest]
+name = "DoomRUST"
+version = "0.0.1"
+
+[paths]
+    [paths.shaders]
+    vertex = "res/shaders/std.vert"
+    fragment = "res/shaders/std.frag"
+
+[graphics]
+window_width = 700
+window_height = 450
+is_fullscreen = false
