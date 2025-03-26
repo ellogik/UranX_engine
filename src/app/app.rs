@@ -1,29 +1,29 @@
-use glfw::Context;
-use crate::app::Init;
 use crate::app::init::{GLFWHolder, Settings};
+use crate::app::Init;
+use glfw::Context;
 
 pub struct App {
     pub is_end: bool,
     pub glfw_holder: GLFWHolder,
-    pub settings: Settings
+    pub settings: Settings,
 }
 
 impl App {
     pub fn new() -> Self {
-        let mut settings = Init::loadSettings().unwrap();
+        let settings = Init::loadSettings().unwrap();
         let mut glfw_holder = Init::initGLFW(
             settings.graphics.window_width,
             settings.graphics.window_height,
             &(settings.manifest.name.clone() + " - UranX"),
-            glfw::WindowMode::Windowed
-        ).unwrap();
+            glfw::WindowMode::Windowed,
+        )
+        .unwrap();
         Init::initOpenGL(&mut glfw_holder);
-
 
         Self {
             is_end: false,
             glfw_holder,
-            settings
+            settings,
         }
     }
 
@@ -40,7 +40,5 @@ impl App {
         }
     }
 
-    pub fn end(self) {
-
-    }
+    pub fn end(self) {}
 }
