@@ -6,7 +6,7 @@ use std::string::String;
 use tobj;
 
 #[derive(Debug)]
-struct Model {
+pub struct Model {
     meshes: Vec<Mesh>,
     texture_loader: HashMap<String, Texture>,
     directory: String,
@@ -18,6 +18,10 @@ impl Model {
             meshes: Vec::new(),
             texture_loader: HashMap::new(),
             directory: String::new(),
+        };
+
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            model.directory = parent.to_string_lossy().to_string();
         };
 
         model.load_model(path);
@@ -36,6 +40,7 @@ impl Model {
             for material in materials {
                 if !material.diffuse_texture.is_empty() {
                     let texture_path = format!("{}/{}", self.directory, material.diffuse_texture);
+                    println!("[DEBUG] Loading texture: {}", texture_path);
                     let texture = Texture::load(&texture_path, "diffuse".to_string());
                     self.texture_loader
                         .insert(material.diffuse_texture.clone(), texture);
@@ -57,7 +62,7 @@ impl Model {
                 mesh.positions[i * 3 + 2],
             ];
 
-            let normal = if !mesh.normals.is_empty() {
+            let normal = if !mesh.normals.is_empty() && (i * 3 + 2) < mesh.normals.len() {
                 [
                     mesh.normals[i * 3],
                     mesh.normals[i * 3 + 1],
@@ -73,6 +78,11 @@ impl Model {
                 [0.0, 0.0]
             };
 
+            println!(
+                "[DEBUG] Vertex {}: Pos({:?}), Normal({:?}), UV({:?})",
+                i, position, normal, texture_coords
+            );
+
             vertices.push(Vertex {
                 position,
                 normal,
@@ -81,12 +91,21 @@ impl Model {
         }
 
         if let Some(material_id) = mesh.material_id {
-            if let Some(material) = self.texture_loader.get(&self.directory) {
+            if let Some(material) = self
+                .texture_loader
+                .get(&format!("{}/{}", self.directory, material_id))
+            {
                 texture.push(material.clone());
             }
         }
 
         let mesh = Mesh::new(vertices, indices, texture);
         self.meshes.push(mesh);
+    }
+
+    pub fn draw(&self, shader_program: u32) {
+        for mesh in &self.meshes {
+            mesh.draw(shader_program);
+        }
     }
 }

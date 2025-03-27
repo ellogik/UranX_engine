@@ -2,7 +2,7 @@ use gl;
 
 #[derive(Debug, Clone)]
 pub struct ShaderProgram {
-    gl_shader_program: u32,
+    pub gl_shader_program: u32,
     gl_vertex_shader: u32,
     gl_fragment_shader: u32,
 }
@@ -85,10 +85,10 @@ impl ShaderProgram {
         }
     }
 
-    pub fn set_int(&self, name: &str, value: f32) {
+    pub fn set_int(shader_program: u32, name: &str, value: f32) {
         unsafe {
             let loc = gl::GetUniformLocation(
-                self.gl_shader_program,
+                shader_program,
                 std::ffi::CString::new(name).unwrap().as_ptr(),
             );
 

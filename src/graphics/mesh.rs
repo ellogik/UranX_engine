@@ -101,10 +101,16 @@ impl Mesh {
         }
     }
 
-    pub fn draw(&self, shader_program: ShaderProgram) {
+    pub fn draw(&self, shader_program: u32) {
         unsafe {
             let mut shader_diffuse_normal: u32 = 1;
             let mut shader_specular_normal: u32 = 1;
+
+            println!(
+                "vertices: {}, indices: {}",
+                self.vertices.len(),
+                self.indices.len()
+            );
 
             for (i, texture) in self.textures.iter().enumerate() {
                 gl::ActiveTexture(gl::TEXTURE0 + i as u32);
@@ -122,7 +128,7 @@ impl Mesh {
                 };
 
                 let name: String = format!("material{}{}", texture.texture_type, number);
-                ShaderProgram::set_int(&shader_program, &name, i as f32);
+                ShaderProgram::set_int(shader_program, &name, i as f32);
 
                 gl::BindTexture(gl::TEXTURE_2D, texture.texture_id);
             }

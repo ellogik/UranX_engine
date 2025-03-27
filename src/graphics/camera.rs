@@ -2,15 +2,15 @@ use std::f32::consts::PI;
 
 #[derive(Debug, Clone)]
 pub struct Camera {
-    gl_camera_pos: [f32; 3],
-    gl_camera_front: [f32; 3],
-    gl_camera_up: [f32; 3],
-    gl_camera_sensitivity: f32,
-    gl_camera_yaw: f32,
-    gl_camera_pitch: f32,
-    first_move: bool,
-    center_x: f32,
-    center_y: f32,
+    pub gl_camera_pos: [f32; 3],
+    pub gl_camera_front: [f32; 3],
+    pub gl_camera_up: [f32; 3],
+    pub gl_camera_sensitivity: f32,
+    pub gl_camera_yaw: f32,
+    pub gl_camera_pitch: f32,
+    pub first_move: bool,
+    pub center_x: f32,
+    pub center_y: f32,
 }
 
 impl Camera {
@@ -89,22 +89,22 @@ impl Camera {
     }
 
     pub fn move_right(&mut self, speed: f32) {
-        let cross_product = Camera::cross(&self, self.gl_camera_front, self.gl_camera_up);
-        let normalized = Camera::normalize(&self, cross_product);
+        let cross_product = Camera::cross(self.gl_camera_front, self.gl_camera_up);
+        let normalized = Camera::normalize(&cross_product);
         self.gl_camera_pos[0] += normalized[0] * speed;
         self.gl_camera_pos[1] += normalized[1] * speed;
         self.gl_camera_pos[2] += normalized[2] * speed;
     }
 
     pub fn move_left(&mut self, speed: f32) {
-        let cross_product = Camera::cross(&self, self.gl_camera_front, self.gl_camera_up);
-        let normalized = Camera::normalize(&self, cross_product);
+        let cross_product = Camera::cross(self.gl_camera_front, self.gl_camera_up);
+        let normalized = Camera::normalize(&cross_product);
         self.gl_camera_pos[0] += normalized[0] * speed;
         self.gl_camera_pos[1] += normalized[1] * speed;
         self.gl_camera_pos[2] += normalized[2] * speed;
     }
 
-    fn cross(&self, v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
+    fn cross(v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
         [
             v1[1] * v2[2] - v1[2] * v2[1],
             v1[2] * v2[0] - v1[0] * v2[2],
@@ -112,13 +112,100 @@ impl Camera {
         ]
     }
 
-    fn normalize(&self, v: [f32; 3]) -> [f32; 3] {
+    fn normalize(v: &[f32; 3]) -> [f32; 3] {
         let length = (v[0].powi(2) + v[1].powi(2) + v[2].powi(2)).sqrt();
         if length != 0.0 {
             [v[0] / length, v[1] / length, v[2] / length]
         } else {
             [0.0, 0.0, 0.0]
         }
+    }
+
+    fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
+        a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    }
+
+    pub fn perspective(fov: f32, aspect: f32, near: f32, far: f32) -> [f32; 16] {
+        let f = 1.0 / (Camera::to_radiance(fov) / 2.0).tan();
+        let range = near - far;
+
+        [
+            f / aspect,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            f,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            (far + near) / range,
+            -1.0,
+            0.0,
+            0.0,
+            (2.0 * far * near) / range,
+            0.0,
+        ]
+    }
+
+    pub fn look_at(position: [f32; 3], target: [f32; 3], up: [f32; 3]) -> [f32; 16] {
+        let mut forward = [
+            position[0] - target[0],
+            position[1] - target[1],
+            position[2] - target[2],
+        ];
+        Camera::normalize(&mut forward);
+
+        let mut right = Camera::cross(up, forward);
+        Camera::normalize(&mut right);
+
+        let up_corrected = Camera::cross(forward, right);
+
+        [
+            right[0],
+            up_corrected[0],
+            forward[0],
+            0.0,
+            right[1],
+            up_corrected[1],
+            forward[1],
+            0.0,
+            right[2],
+            up_corrected[2],
+            forward[2],
+            0.0,
+            -Camera::dot(right, position),
+            -Camera::dot(up_corrected, position),
+            -Camera::dot(forward, position),
+            1.0,
+        ]
+    }
+
+    pub fn translate(matrix: [f32; 16], translation: [f32; 3]) -> [f32; 16] {
+        let mut result = matrix;
+
+        result[12] += translation[0];
+        result[13] += translation[1];
+        result[14] += translation[2];
+
+        result
+    }
+
+    pub fn scale(matrix: [f32; 16], scale: [f32; 3]) -> [f32; 16] {
+        let mut result = matrix;
+
+        result[0] *= scale[0];
+        result[5] *= scale[1];
+        result[10] *= scale[2];
+
+        result
+    }
+
+    pub fn identity_matrix() -> [f32; 16] {
+        [
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ]
     }
 
     fn to_radiance(deg: f32) -> f32 {
